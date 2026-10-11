@@ -9,8 +9,11 @@ DOJO="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 PROJ="$DOJO/callsheet"
 
 build() {
-  rm -rf "$PROJ"
-  cp -r "$DOJO/seed/base" "$PROJ"
+  # empty the folder rather than deleting it, so an nvim already open in it
+  # keeps a valid working directory (otherwise lualine etc. throw ENOENT)
+  mkdir -p "$PROJ"
+  find "$PROJ" -mindepth 1 -delete
+  cp -r "$DOJO/seed/base/." "$PROJ/"
   cp "$DOJO/seed/env" "$PROJ/.env"
   (
     cd "$PROJ"
