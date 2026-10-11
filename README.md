@@ -17,6 +17,8 @@ It has two halves:
 Every key in the course was checked against a live dump of LazyVim's keymaps,
 not just the docs.
 
+**Try the course in your browser:** https://edmooredop.github.io/lazyvim-dojo/site/
+
 ## Requirements
 
 - Neovim with [LazyVim](https://www.lazyvim.org/) and the
