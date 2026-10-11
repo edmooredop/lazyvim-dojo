@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# LazyVim Dojo launcher
+#   practice           open nvim on the practice project (creates it on first run)
+#   practice --reset   restore the practice project to its starting state
+#   practice --site    open the course in your browser
+#   practice --keys    re-dump keymaps from YOUR nvim so the course matches your config
+set -euo pipefail
+DOJO="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+PROJ="$DOJO/callsheet"
+
+build() {
+  rm -rf "$PROJ"
+  cp -r "$DOJO/seed/base" "$PROJ"
+  cp "$DOJO/seed/env" "$PROJ/.env"
+  (
+    cd "$PROJ"
+    git init -q -b main
+    git add -A
+    GIT_AUTHOR_NAME=dojo GIT_AUTHOR_EMAIL=dojo@example.invalid \
+      GIT_COMMITTER_NAME=dojo GIT_COMMITTER_EMAIL=dojo@example.invalid \
+      git -c commit.gpgsign=false commit -q -m "Initial call sheet"
+  )
+  # deliberate uncommitted changes for the git lessons
+  cp -r "$DOJO/seed/changes/." "$PROJ/"
+}
+
+open_url() {
+  local url="$1"
+  if command -v xdg-open >/dev/null; then xdg-open "$url" >/dev/null 2>&1 &
+  elif command -v open >/dev/null; then open "$url"
+  else echo "Open this in your browser: $url"; fi
+}
+
+case "${1:-}" in
+  --reset)
+    build
+    echo "callsheet reset to the starting state."
+    ;;
+  --site)
+    open_url "$DOJO/site/index.html"
+    ;;
+  --keys)
+    [ -d "$PROJ" ] || build
+    cd "$PROJ"
+    echo "Dumping keymaps from your nvim (takes ~10s)..."
+    DOJO_OUT="$DOJO/site/keymaps.js" nvim --headless -c "luafile $DOJO/tools/dumpmaps.lua"
+    echo "Wrote site/keymaps.js. Reload the course page."
+    ;;
+  -h|--help)
+    sed -n 2,6p "$0" | sed 's/^# \{0,1\}//'
+    ;;
+  "")
+    [ -d "$PROJ" ] || build
+    cd "$PROJ"
+    exec nvim README.md
+    ;;
+  *)
+    echo "unknown option: $1 (try --help)" >&2; exit 2
+    ;;
+esac
